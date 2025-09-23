@@ -38,7 +38,7 @@ namespace DapperrShopPractice.Migrations
                     b.HasKey("Id")
                         .HasName("PK__Categori__3214EC0751878166");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("DapperrShopPractice.Models.Customer", b =>
@@ -62,7 +62,7 @@ namespace DapperrShopPractice.Migrations
                     b.HasKey("Id")
                         .HasName("PK__Customer__3214EC07EE221CB8");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("DapperrShopPractice.Models.DeletedProduct", b =>
@@ -89,7 +89,7 @@ namespace DapperrShopPractice.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DeletedProducts");
+                    b.ToTable("DeletedProducts", (string)null);
                 });
 
             modelBuilder.Entity("DapperrShopPractice.Models.Order", b =>
@@ -113,7 +113,7 @@ namespace DapperrShopPractice.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("DapperrShopPractice.Models.OrderProduct", b =>
@@ -132,7 +132,7 @@ namespace DapperrShopPractice.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("OrderProducts");
+                    b.ToTable("OrderProducts", (string)null);
                 });
 
             modelBuilder.Entity("DapperrShopPractice.Models.Product", b =>
@@ -159,7 +159,7 @@ namespace DapperrShopPractice.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("DapperrShopPractice.Models.Order", b =>
@@ -178,14 +178,12 @@ namespace DapperrShopPractice.Migrations
                     b.HasOne("DapperrShopPractice.Models.Order", "Order")
                         .WithMany("OrderProducts")
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired()
                         .HasConstraintName("FK__OrderProd__Order__4222D4EF");
 
                     b.HasOne("DapperrShopPractice.Models.Product", "Product")
                         .WithMany("OrderProducts")
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired()
                         .HasConstraintName("FK__OrderProd__Produ__4316F928");
 
