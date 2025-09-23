@@ -295,13 +295,13 @@ namespace DapperrShopPractice
             {
                 Console.WriteLine("Продукт не найден.");
             }
-            ////// 3. Тригери на видалення об'єктів таблиць: видалені об'єкти переносяться в таблицю видалених об'єктів
-            //connection.Execute("DELETE FROM Products WHERE Id = @Id", new { Id = 1 });
-            //var deletedProducts = connection.Query("SELECT * FROM DeletedProducts");
-            //foreach (var p in deletedProducts)
-            //{
-            //    Console.WriteLine($"{p.Id} | {p.Name} | {p.Price} | {p.DeletedAt}");
-            //}
+            //// 3. Тригери на видалення об'єктів таблиць: видалені об'єкти переносяться в таблицю видалених об'єктів
+            connection.Execute("DELETE FROM Products WHERE Id = @Id", new { Id = 1 });
+            var deletedProducts = connection.Query("SELECT * FROM DeletedProducts");
+            foreach (var p in deletedProducts)
+            {
+                Console.WriteLine($"{p.Id} | {p.Name} | {p.Price} | {p.DeletedAt}");
+            }
 
             connection.Close();
 
