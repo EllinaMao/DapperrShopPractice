@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Migrations;
 using System.Collections.Generic;
+using System.Data;
 using System.Text.RegularExpressions;
 using Z.Dapper.Plus;
 using static Dapper.SqlMapper;
@@ -42,6 +43,12 @@ namespace DapperrShopPractice
     {
         static void Main(string[] args)
         {
+            string connectionString = "Server=DESKTOP-BDMPPLC\\SQLEXPRESS;Database=DapperShop;Trusted_Connection=True;TrustServerCertificate=True;";
+            using var connection = new SqlConnection(connectionString);
+
+            connection.Open();
+
+            #region part1
             //var crud = new Crud();
             ////2.INSERT — додати новий товар Name = "Mouse", Price = 25.50, CategoryId = 1
             //{
@@ -86,14 +93,118 @@ namespace DapperrShopPractice
             //    {
             //        Console.WriteLine($"{p.Id} | {p.Name} | {p.Price} | {p.Category}");
             //    }
+            #endregion
+
+            #region part2
+            int customerId = 1;
+            int ProductId1 = 1;
+            int productId2 = 2;
 
 
-            string connectionString = "Server=DESKTOP-BDMPPLC\\SQLEXPRESS;Database=DapperShop;Trusted_Connection=True;TrustServerCertificate=True;";
+            using (IDbConnection dbConnection = new SqlConnection(connectionString))
+            {
+                var repository = new DapperPart2(dbConnection);
+                //1
+                Console.WriteLine("Товары и категории");
+                try
+                {
+                    var products = repository.GetProductsWithCategories();
+                    foreach (var p in products.Take(5))
+                    {
+
+                        Console.WriteLine($"Товар: {p.ProductName}, Категория: {p.CategoryName}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{ex.Message}");
+                }
+
+                //2
+                Console.WriteLine("Категориии и количество товаров");
+                try
+                {
+                    var category = repository.GetCategoryProductCounts();
+                    foreach (var c in category)
+                    {
+
+                        Console.WriteLine($"Категория: {c.CategoryName}, Категория: {c.ProductCount}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{ex.Message}");
+                }
+                //3.
+                Console.WriteLine("Заказы с именем покупателя, датой и списком товаров");
+                try
+                {
+                    var orders = repository.GetOrderDetails();
+                    foreach (var o in orders)
+                    {
+                        Console.WriteLine($"  Заказ: {o.OrderId} - {o.CustomerName} - Товар: {o.ProductName} - {o.Quantity}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{ex.Message}");
+                }
 
 
-            using var connection = new SqlConnection(connectionString);
+                //4
+                Console.WriteLine("Новый заказ");
 
-            connection.Open();
+                //анонимный
+                var itemsToOrder = new[]
+                                {
+                    new { ProductId = ProductId1, Quantity = 2 },
+                    new { ProductId = productId2, Quantity = 1 }
+                };
+
+                try
+                {
+                    int newOrderId = repository.CreateNewOrder(customerId, itemsToOrder);
+                    Console.WriteLine($"Успешно создан новый заказ с ID: {newOrderId}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{ex.Message}");
+                }
+
+                // 5.
+                Console.WriteLine("Количество заказов покупателей");
+                try
+                {
+                    var customerCounts = repository.GetCustomerOrderCounts();
+                    foreach (var c in customerCounts)
+                    {
+                        Console.WriteLine($"Покупатель: {c.CustomerName}, Заказы: {c.OrderCount}");
+                    }
+                }
+
+                catch (Exception ex) { Console.WriteLine($"{ex.Message}"); }
+                // 6
+                Console.WriteLine("Общая сумма заказов");
+                try
+                {
+                    var totals = repository.GetOrderTotals();
+                    foreach (var t in totals.Take(5))
+                    {
+                        Console.WriteLine($"Заказ ID: {t.OrderId}, Сумма: {t.TotalAmount}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{ex.Message}");
+                }
+            }
+
+            #endregion
+
+            #region Закоментировано
+
+
+
 
             //  Console.WriteLine(" Товари ");
 
@@ -227,84 +338,89 @@ namespace DapperrShopPractice
             //var produc = connection.Query<Product>("SELECT * FROM Products").ToList();
             //produc.ForEach(p => p.Price *= 1.1M); // підвищення ціни на 10%
             //connection.BulkUpdate(produc);
-            var crud1 = new Crud();
-            var prod = crud1.SelectWithCategory();
-            foreach (var item in prod)
-            {
-                Console.WriteLine(item);
-            }
-            ////1.ДЗ Підвищит ціну продукту який має найменшу кількість продажів
-            var sql = @"
-            UPDATE Products
-            SET Price = Price * 1.1
-            WHERE Id = (
-                SELECT TOP 1 ProductId
-                FROM OrderProducts
-                GROUP BY ProductId
-                ORDER BY COUNT(*) ASC
-                );
-            ";
+            #endregion
 
-            // Выполняем запрос
-            int affectedRows = connection.Execute(sql);
-            Console.WriteLine($"Обновлено {affectedRows} продукт(ов)");
 
-            Console.WriteLine("Цена смартфорна увеличилась");
-            var product = connection.QuerySingleOrDefault(@"
-            SELECT p.Id, p.Name, p.Price, c.Id AS CategoryId, c.Name AS CategoryName
-            FROM Products p
-            JOIN Categories c ON p.CategoryId = c.Id
-            WHERE p.Id = (
-            SELECT TOP 1 ProductId
-            FROM OrderProducts
-            GROUP BY ProductId
-            ORDER BY COUNT(*) ASC
-        );
-    ");
 
-            if (product != null)//я пока писала запрос замучалась с ошибками
-            {
-                Console.WriteLine($"Продукт с минимальными продажами после повышения цены:");
-                Console.WriteLine($"Id: {product.Id}, Name: {product.Name}, Price: {product.Price}, Category: {product.CategoryName}");
-            }
-            else
-            {
-                Console.WriteLine("Продукт не найден.");
-            }
-            //// 2.  1ДЗ  в процедурі
-            connection.Execute("EXEC IncreaseTheLowestSellingProductPrice");
-            Console.WriteLine("Цена смартфорна увеличилась");
-            product = connection.QuerySingleOrDefault(@"
-            SELECT p.Id, p.Name, p.Price, c.Id AS CategoryId, c.Name AS CategoryName
-            FROM Products p
-            JOIN Categories c ON p.CategoryId = c.Id
-            WHERE p.Id = (
-            SELECT TOP 1 ProductId
-            FROM OrderProducts
-            GROUP BY ProductId
-            ORDER BY COUNT(*) ASC
-        );
-    ");
+            #region lastHomework
+            //        var crud1 = new Crud();
+            //        var prod = crud1.SelectWithCategory();
+            //        foreach (var item in prod)
+            //        {
+            //            Console.WriteLine(item);
+            //        }
+            //        ////1.ДЗ Підвищит ціну продукту який має найменшу кількість продажів
+            //        var sql = @"
+            //        UPDATE Products
+            //        SET Price = Price * 1.1
+            //        WHERE Id = (
+            //            SELECT TOP 1 ProductId
+            //            FROM OrderProducts
+            //            GROUP BY ProductId
+            //            ORDER BY COUNT(*) ASC
+            //            );
+            //        ";
 
-            if (product != null)
-            {
-                Console.WriteLine($"Продукт с минимальными продажами после повышения цены:");
-                Console.WriteLine($"Id: {product.Id}, Name: {product.Name}, Price: {product.Price}, Category: {product.CategoryName}");
-            }
-            else
-            {
-                Console.WriteLine("Продукт не найден.");
-            }
-            //// 3. Тригери на видалення об'єктів таблиць: видалені об'єкти переносяться в таблицю видалених об'єктів
-            connection.Execute("DELETE FROM Products WHERE Id = @Id", new { Id = 1 });
-            var deletedProducts = connection.Query("SELECT * FROM DeletedProducts");
-            foreach (var p in deletedProducts)
-            {
-                Console.WriteLine($"{p.Id} | {p.Name} | {p.Price} | {p.DeletedAt}");
-            }
+            //        // Выполняем запрос
+            //        int affectedRows = connection.Execute(sql);
+            //        Console.WriteLine($"Обновлено {affectedRows} продукт(ов)");
 
-            connection.Close();
+            //        Console.WriteLine("Цена смартфорна увеличилась");
+            //        var product = connection.QuerySingleOrDefault(@"
+            //        SELECT p.Id, p.Name, p.Price, c.Id AS CategoryId, c.Name AS CategoryName
+            //        FROM Products p
+            //        JOIN Categories c ON p.CategoryId = c.Id
+            //        WHERE p.Id = (
+            //        SELECT TOP 1 ProductId
+            //        FROM OrderProducts
+            //        GROUP BY ProductId
+            //        ORDER BY COUNT(*) ASC
+            //    );
+            //");
 
+            //        if (product != null)//я пока писала запрос замучалась с ошибками
+            //        {
+            //            Console.WriteLine($"Продукт с минимальными продажами после повышения цены:");
+            //            Console.WriteLine($"Id: {product.Id}, Name: {product.Name}, Price: {product.Price}, Category: {product.CategoryName}");
+            //        }
+            //        else
+            //        {
+            //            Console.WriteLine("Продукт не найден.");
+            //        }
+            //        //// 2.  1ДЗ  в процедурі
+            //        connection.Execute("EXEC IncreaseTheLowestSellingProductPrice");
+            //        Console.WriteLine("Цена смартфорна увеличилась");
+            //        product = connection.QuerySingleOrDefault(@"
+            //        SELECT p.Id, p.Name, p.Price, c.Id AS CategoryId, c.Name AS CategoryName
+            //        FROM Products p
+            //        JOIN Categories c ON p.CategoryId = c.Id
+            //        WHERE p.Id = (
+            //        SELECT TOP 1 ProductId
+            //        FROM OrderProducts
+            //        GROUP BY ProductId
+            //        ORDER BY COUNT(*) ASC
+            //    );
+            //");
+
+            //        if (product != null)
+            //        {
+            //            Console.WriteLine($"Продукт с минимальными продажами после повышения цены:");
+            //            Console.WriteLine($"Id: {product.Id}, Name: {product.Name}, Price: {product.Price}, Category: {product.CategoryName}");
+            //        }
+            //        else
+            //        {
+            //            Console.WriteLine("Продукт не найден.");
+            //        }
+            //        //// 3. Тригери на видалення об'єктів таблиць: видалені об'єкти переносяться в таблицю видалених об'єктів
+            //        connection.Execute("DELETE FROM Products WHERE Id = @Id", new { Id = 1 });
+            //        var deletedProducts = connection.Query("SELECT * FROM DeletedProducts");
+            //        foreach (var p in deletedProducts)
+            //        {
+            //            Console.WriteLine($"{p.Id} | {p.Name} | {p.Price} | {p.DeletedAt}");
+            //        }
+
+            //        connection.Close();
+            #endregion
 
 
         }
